@@ -3,15 +3,81 @@ from __future__ import absolute_import, division, print_function, \
 
 import requests
 from iota import *
+from iota import iota
 from iota.adapter.sandbox import SandboxAdapter
 import uuid
+from getpass import getpass as secure_input
+from typing import Optional, Text
+
+from iota import __version__, Iota
+from iota.crypto.types import Seed
+from six import binary_type, moves as compat, text_type
 from pprint import pprint
 
 
 # this method will register the request by generating a unique id for the request, this will serve as the tag for the
 # sample transaction
 def register_request():
-    return uuid.uuid5()
+    return uuid.uuid4()
+
+
+def generate_addresses(index = 0, uri='https://sandbox.iotatoken.com/api/v1/', auth_token='auth token goes here'):
+    # type: (Text, int, Optional[int], bool) -> None
+    seed = get_seed()
+
+    # Create the API instance.
+    # Note: If ``seed`` is null, a random seed will be generated.
+    api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
+
+    # If we generated a random seed, then we need to display it to the
+    # user, or else they won't be able to use their new addresses!
+    if not seed:
+        print('A random seed has been generated. Press enter to generate it.')
+        output_seed(api.seed)
+
+    print('Generating addresses.  Please wait until the address is generated...')
+    print('')
+
+    # generate address based on count arg
+    addresses = []
+    for address in api.get_new_addresses(index, 1):
+        addresses.append(binary_type(address).decode('ascii'))
+    return addresses[0]
+
+
+def get_seed():
+    # type: () -> binary_type
+    """
+    Prompts the user securely for their seed.
+    """
+    print(
+        'Enter seed and press return (typing will not be shown).  '
+        'If empty, a random seed will be generated and displayed on the screen.'
+    )
+    seed = secure_input('')  # type: Text
+    return seed.encode('ascii')
+
+
+def output_seed(seed):
+    # type: (Seed) -> None
+    """
+    Outputs the user's seed to stdout, show security warnings from boiler plate code (Obligatory PSA)
+    """
+    print(
+        'WARNING: Anyone who has your seed can spend your IOTAs! '
+        'Clear the screen after recording your seed!'
+    )
+    compat.input('')
+    print('Your seed is:')
+    print('')
+    print(binary_type(seed).decode('ascii'))
+    print('')
+
+    print(
+        'make sure to clear the screen contents'
+        'and press enter to continue.'
+    )
+    compat.input('')
 
 
 # sample dummy api request, will return dictionary of request object and UUID of the requst
@@ -21,50 +87,47 @@ def create_request(url="https://api.github.com/users/sigmoidfreud/repos", header
 
 
 # Create the API object.
-iota = Iota(
-    # To use sandbox mode, inject a ``SandboxAdapter``.
-    adapter=SandboxAdapter(
-        # URI of the sandbox node.
-        uri='https://sandbox.iotatoken.com/api/v1/',
+def create_iota_object(uri, auth_token, seed=None):
+    return Iota(
+        # To use sandbox mode, inject a ``SandboxAdapter``.
+        adapter=SandboxAdapter(
+            # URI of the sandbox node.
+            uri=uri,
 
-        # Access token used to authenticate requests.
-        # Contact the node maintainer to get an access token.
-        auth_token='auth token goes here',
-    ),
+            # Access token used to authenticate requests.
+            # Contact the node maintainer to get an access token.
+            auth_token=auth_token,
+        ),
 
-    # Seed used for cryptographic functions.
-    # If null, a random seed will be generated.
-    seed=b'SEED9GOES9HERE',
-)
+        # Seed used for cryptographic functions.
+        # If null, a random seed will be generated.
+        seed=seed,
+    )
 
 
 # Example of sending a transfer using the sandbox.
 # For more information, see :py:meth:`Iota.send_transfer`.
 # noinspection SpellCheckingInspection
-def create_transaction_dictionary(depth=100, request_tag=None,
-                                  payment_address=b'TESTVALUE9DONTUSEINPRODUCTION99999FBFFTG'):
+def create_transaction_dictionary(depth=100, request_tag=None):
     sample_transaction = ProposedTransaction(
-        # API payment address.
-        address=
-        Address(
-            bytes(payment_address)
-        ),
+        # on the fly API payment address.
+        address= generate_addresses(),
 
         # Amount of IOTA to transfer.
         # This value may be zero.
         value=17,
 
         # Optional tag to attach to the transfer.
-        tag=Tag(bytes(request_tag)),
+        tag=Tag(request_tag),
 
         # Optional message to include with the transfer.
         message=TryteString.from_string('I am making an API Request!'),
     )
-    return {"depth": depth, "transaction-object": sample_transaction, "tag": request_tag}
+    return {"depth": depth, "transaction-object": sample_transaction, "tag": Tag(request_tag)}
 
 
 def requestData():
-    request_id = register_request()
+    request_id = register_request().bytes
     transaction = create_transaction_dictionary(request_tag=request_id)
     iota.send_transfer(
         depth=transaction['depth'],
@@ -74,7 +137,7 @@ def requestData():
         transfers=[transaction],
     )
     request_dict = create_request(headers={"auth_token": transaction.branch_transaction_hash})
-    if transaction['tag'] == request_id:
+    if transaction['tag'] == Tag(request_id):
         return request_dict['request'].json()
 
 
