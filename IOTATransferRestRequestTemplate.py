@@ -51,7 +51,7 @@ sample_transaction = ProposedTransaction(
 )
 
 
-def generic_http_request_for_micropayment(api_request=sample_request):
+def requestData(api_request=sample_request):
     iota.send_transfer(
         depth=default_depth,
 
@@ -61,3 +61,8 @@ def generic_http_request_for_micropayment(api_request=sample_request):
     )
     if sample_transaction.value == 17:
         return api_request.json()
+
+def main():
+    requestData()
+
+if __name__ == "__main__": main()
