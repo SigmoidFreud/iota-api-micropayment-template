@@ -65,7 +65,7 @@ def create_transaction_dictionary(depth=100, request_tag=None,
 
 def requestData():
     request_id = register_request()
-    transaction = create_transaction_dictionary(request_tag=id)
+    transaction = create_transaction_dictionary(request_tag=request_id)
     iota.send_transfer(
         depth=transaction['depth'],
 
