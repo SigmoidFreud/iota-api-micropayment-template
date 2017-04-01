@@ -59,4 +59,5 @@ def generic_http_request_for_micropayment(api_request=sample_request):
         # bundle.
         transfers=[sample_transaction],
     )
-    pprint(api_request.json())
+    if sample_transaction.value == 17:
+        return api_request.json()
