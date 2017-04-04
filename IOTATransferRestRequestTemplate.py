@@ -5,7 +5,7 @@ import uuid
 from getpass import getpass as secure_input
 
 import requests
-from iota import Address, Iota, ProposedTransaction, Tag, TryteString
+from iota import Address, Bundle, Iota, ProposedTransaction, Tag, TryteString
 from iota.adapter.sandbox import SandboxAdapter
 from iota.crypto.types import Seed
 from six import binary_type, moves as compat
@@ -128,17 +128,22 @@ def requestData():
     request_id = register_request().bytes
     transaction = create_transaction_dictionary(request_tag=request_id)
 
-    # :todo: Populate these values and/or make API object globally-accessible.
-    api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
-    api.send_transfer(
-        depth=transaction['depth'],
-
-        # One or more :py:class:`ProposedTransaction` objects to add to the
-        # bundle.
-        transfers=[transaction['transaction-object']],
-    )
-    request_dict = create_request(headers={'auth_token': transaction['transaction-object'].bundle_hash})
     if transaction['tag'] == Tag(request_id):
+        # :todo: Populate these values and/or make API object globally-accessible.
+        api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
+        st_response = api.send_transfer(
+            depth=transaction['depth'],
+
+            # One or more :py:class:`ProposedTransaction` objects to add to the
+            # bundle.
+            transfers=[transaction['transaction-object']],
+        )
+
+        # Extract the tail transaction hash from the newly-created
+        # bundle.
+        bundle = st_response['bundle'] # type: Bundle
+        request_dict = create_request(headers={'auth_token': bundle.tail_transaction.hash})
+
         return request_dict['request'].json()
 
     return None
