@@ -19,13 +19,16 @@ def register_request():
     return uuid.uuid4()
 
 
-def generate_addresses(index=0, uri='https://sandbox.iotatoken.com/api/v1/', auth_token='auth token goes here'):
+def generate_addresses(index=0, uri='http://85.93.93.110:14265/', auth_token=None):
     # type: (int, Text, Text) -> Address
     seed = get_seed()
 
     # Create the API instance.
     # Note: If ``seed`` is null, a random seed will be generated.
-    api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
+    if auth_token is None:
+        api = create_iota_object(uri=uri,auth_token=auth_token, seed=seed)
+    else:
+        api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
 
     # If we generated a random seed, then we need to display it to the
     # user, or else they won't be able to use their new addresses!
@@ -38,6 +41,7 @@ def generate_addresses(index=0, uri='https://sandbox.iotatoken.com/api/v1/', aut
 
     # generate address based on count arg
     gna_result = api.get_new_addresses(index, 1)
+    print('address is now generated')
     return gna_result['addresses'][0]
 
 def get_seed():
@@ -69,7 +73,7 @@ def output_seed(seed):
     print('')
 
     print(
-        'make sure to clear the screen contents'
+        'make sure to clear the screen contents',
         'and press enter to continue.'
     )
     compat.input('')
@@ -109,10 +113,9 @@ def create_transaction_dictionary(depth=3, request_tag=None):
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
         address=generate_addresses(),
-
         # Amount of IOTA to transfer.
         # This value may be zero.
-        value=17,
+        value=0,
 
         # Optional tag to attach to the transfer.
         tag=Tag(request_tag),
@@ -125,12 +128,13 @@ def create_transaction_dictionary(depth=3, request_tag=None):
 
 def requestData():
     # type: () -> Optional[Text]
-    request_id = register_request().bytes
+    request_id = TryteString.from_string(str(register_request()))[0:27]
+    print(request_id)
     transaction = create_transaction_dictionary(request_tag=request_id)
 
     if transaction['tag'] == Tag(request_id):
         # :todo: Populate these values and/or make API object globally-accessible.
-        api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
+        api = create_iota_object(uri='http://85.93.93.110:14265/',auth_token=None)
         st_response = api.send_transfer(
             depth=transaction['depth'],
 
@@ -143,7 +147,7 @@ def requestData():
         # bundle.
         bundle = st_response['bundle'] # type: Bundle
         request_dict = create_request(headers={'auth_token': bundle.tail_transaction.hash})
-
+        print(request_dict['request'].json())
         return request_dict['request'].json()
 
     return None
