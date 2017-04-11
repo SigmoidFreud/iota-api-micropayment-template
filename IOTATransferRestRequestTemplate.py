@@ -19,7 +19,7 @@ def register_request():
     return uuid.uuid4()
 
 
-def generate_addresses(index=0, uri='http://85.93.93.110:14265/', auth_token=None):
+def generate_addresses(index=0, uri='ip address', auth_token=None):
     # type: (int, Text, Text) -> Address
     seed = get_seed()
 
