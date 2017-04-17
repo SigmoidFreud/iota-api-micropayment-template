@@ -112,14 +112,14 @@ def create_iota_object(uri, auth_token, seed=None):
 
 # Example of sending a transfer using the sandbox.
 # For more information, see :py:meth:`Iota.send_transfer`.
-def create_transaction_dictionary(depth=3, request_tag=None):
+def create_transaction_dictionary(price, depth=3, request_tag=None):
     # type: (int, Optional[binary_type]) -> dict
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
         address=generate_addresses(),
         # Amount of IOTA to transfer.
         # This value may be zero.
-        value=0,
+        value=price,
 
         # Optional tag to attach to the transfer.
         tag=Tag(request_tag),
@@ -156,7 +156,14 @@ def requestData(api_key=None):
                                                "Authorization" : api_key,
                                                "Content-Type" : "application/json"})
         print(request_dict['request'].json())
-        return request_dict['request'].json()
+        response_headers = request_dict['request'].headers
+        price = response_headers['price']
+        accept_payment = input("The server asks for a payment of " + price + " IOTAs. procceed? Y/N")
+        if (accept_payment == 'Y'):
+            create_transaction_dictionary(price)
+            return request_dict['request'].json()
+        else:
+            print ("You have not agreed to pay for the request data, so a an empty object will be returned")
 
     return None
 
