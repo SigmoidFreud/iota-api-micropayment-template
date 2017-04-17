@@ -155,12 +155,10 @@ def requestData(api_key=None):
         request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash,
                                                "Authorization" : api_key,
                                                "Content-Type" : "application/json"})
-        print(request_dict['request'].json())
         response_headers = request_dict['request'].headers
         price = response_headers['price']
         accept_payment = input("The server asks for a payment of " + price + " IOTAs. procceed? Y/N")
-        if (accept_payment == 'Y'):
-            create_transaction_dictionary(price)
+        if accept_payment == 'Y':
             return request_dict['request'].json()
         else:
             print ("You have not agreed to pay for the request data, so a an empty object will be returned")
