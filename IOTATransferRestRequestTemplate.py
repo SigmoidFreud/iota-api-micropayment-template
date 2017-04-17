@@ -136,10 +136,14 @@ def requestData(api_key=None):
     # type: () -> Optional[Text]
     request_id = TryteString.from_string(str(register_request()))[0:27]
     print(request_id)
-    transaction = create_transaction_dictionary(request_tag=request_id)
 
-    if transaction['tag'] == Tag(request_id):
-        # :todo: Populate these values and/or make API object globally-accessible.
+    # :todo: Populate these values and/or make API object globally-accessible.
+    request_dict = create_request(headers={"Authorization" : api_key})
+    response_headers = request_dict['request'].headers
+    price = response_headers['price']
+    accept_payment = input("The server asks for a payment of " + price + " IOTAs. procceed? Y/N")
+    if accept_payment == 'Y':
+        transaction = create_transaction_dictionary(price, request_tag=request_id)
         api = create_iota_object(uri='http://85.93.93.110:14265/',auth_token=None)
         st_response = api.send_transfer(
             depth=transaction['depth'],
@@ -153,15 +157,11 @@ def requestData(api_key=None):
         # bundle.
         bundle = st_response['bundle'] # type: Bundle
         request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash,
-                                               "Authorization" : api_key,
-                                               "Content-Type" : "application/json"})
-        response_headers = request_dict['request'].headers
-        price = response_headers['price']
-        accept_payment = input("The server asks for a payment of " + price + " IOTAs. procceed? Y/N")
-        if accept_payment == 'Y':
-            return request_dict['request'].json()
-        else:
-            print ("You have not agreed to pay for the request data, so a an empty object will be returned")
+                                           "Authorization" : api_key})
+        return request_dict['request'].json()
+    else:
+        print ("You have not agreed to pay for the request data, so a an empty object will be returned")
+
 
     return None
 
