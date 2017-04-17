@@ -18,6 +18,10 @@ def register_request():
     # type: () -> uuid.UUID
     return uuid.uuid4()
 
+def generate_api_key():
+    r = requests.get("http://46.101.109.238/new_api_key")
+    return r.content.decode("utf-8")
+
 
 def generate_addresses(index=0, uri='ip address', auth_token=None):
     # type: (int, Text, Text) -> Address
@@ -81,9 +85,9 @@ def output_seed(seed):
 
 # sample dummy api request, will return dictionary of request object and UUID of the requst
 
-def create_request(url="https://api.github.com/users/sigmoidfreud/repos", headers=None):
+def create_request(url="http://46.101.109.238/forecast/Thessaloniki", headers=None):
     # type: (Text, Optional[dict]) -> dict
-    return {"request": requests.get(url, headers or {}), "request-id": uuid.uuid4()}
+    return {"request": requests.get(url, headers or {}), "request-id": register_request()}
 
 
 # Create the API object.
@@ -127,6 +131,7 @@ def create_transaction_dictionary(depth=3, request_tag=None):
 
 
 def requestData():
+    api_key = generate_api_key()
     # type: () -> Optional[Text]
     request_id = TryteString.from_string(str(register_request()))[0:27]
     print(request_id)
@@ -146,7 +151,7 @@ def requestData():
         # Extract the tail transaction hash from the newly-created
         # bundle.
         bundle = st_response['bundle'] # type: Bundle
-        request_dict = create_request(headers={'auth_token': bundle.tail_transaction.hash})
+        request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash, "Authentication" : transaction["tag"], "Content-Type" : "application/json"})
         print(request_dict['request'].json())
         return request_dict['request'].json()
 
