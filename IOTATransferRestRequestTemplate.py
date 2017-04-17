@@ -18,6 +18,7 @@ def register_request():
     # type: () -> uuid.UUID
     return uuid.uuid4()
 
+
 def generate_api_key():
     r = requests.get("http://46.101.109.238/new_api_key")
     return r.content.decode("utf-8")
@@ -30,7 +31,7 @@ def generate_addresses(index=0, uri='ip address', auth_token=None):
     # Create the API instance.
     # Note: If ``seed`` is null, a random seed will be generated.
     if auth_token is None:
-        api = create_iota_object(uri=uri,auth_token=auth_token, seed=seed)
+        api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
     else:
         api = create_iota_object(uri=uri, auth_token=auth_token, seed=seed)
 
@@ -47,6 +48,7 @@ def generate_addresses(index=0, uri='ip address', auth_token=None):
     gna_result = api.get_new_addresses(index, 1)
     print('address is now generated')
     return gna_result['addresses'][0]
+
 
 def get_seed():
     # type: () -> binary_type
@@ -87,7 +89,8 @@ def output_seed(seed):
 
 def create_request(url="http://46.101.109.238/forecast/Thessaloniki", headers=None):
     # type: (Text, Optional[dict]) -> dict
-    return {"request": requests.get(url, headers or {}), "request-id": register_request()}
+    print(headers)
+    return {"request": requests.get(url, headers=headers), "request-id": register_request()}
 
 
 # Create the API object.
@@ -114,12 +117,13 @@ def create_iota_object(uri, auth_token, seed=None):
 # For more information, see :py:meth:`Iota.send_transfer`.
 def create_transaction_dictionary(address, price, depth=3, request_tag=None):
     # type: (int, Optional[binary_type]) -> dict
+    print("address: "+address)
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
-        address=address,
+        address=str(address),
         # Amount of IOTA to transfer.
         # This value may be zero.
-        value=price,
+        value=int(price),
 
         # Optional tag to attach to the transfer.
         tag=Tag(request_tag),
@@ -138,15 +142,17 @@ def requestData(api_key=None):
     print(request_id)
 
     # :todo: Populate these values and/or make API object globally-accessible.
-    request_dict = create_request(headers={"Authorization" : api_key})
+    print(api_key)
+    request_dict = create_request(headers={"Authorization": api_key})
     response_headers = request_dict['request'].headers
+    print (response_headers)
     price = response_headers['price']
-    accept_payment = input("The server asks for a payment of " + price + " IOTAs. procceed? Y/N")
+    accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/N")
     if accept_payment == 'Y':
         transaction = create_transaction_dictionary(address=response_headers['address'],
-                                                    price = response_headers['price'],
-                                                    request_tag=response_headers['tag'])
-        api = create_iota_object(uri='http://85.93.93.110:14265/',auth_token=None)
+                                                    price=response_headers['price'],
+                                                    request_tag=TryteString.from_string(response_headers['tag'])[0:27])
+        api = create_iota_object(uri='http://85.93.93.110:14265/', auth_token=None)
         st_response = api.send_transfer(
             depth=transaction['depth'],
 
@@ -157,20 +163,19 @@ def requestData(api_key=None):
 
         # Extract the tail transaction hash from the newly-created
         # bundle.
-        bundle = st_response['bundle'] # type: Bundle
+        bundle = st_response['bundle']  # type: Bundle
         request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash,
-                                           "Authorization" : api_key})
+                                               "Authorization": api_key})
         return request_dict['request'].json()
     else:
-        print ("You have not agreed to pay for the request data, so a an empty object will be returned")
-
+        print("You have not agreed to pay for the request data, so a an empty object will be returned")
 
     return None
 
 
 def main():
-    #if no api key is entered as arg then a new one will be generated
-    requestData()
+    # if no api key is entered as arg then a new one will be generated
+    requestData(None)
 
 
 if __name__ == "__main__": main()
