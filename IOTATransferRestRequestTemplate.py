@@ -130,8 +130,9 @@ def create_transaction_dictionary(depth=3, request_tag=None):
     return {"depth": depth, "transaction-object": sample_transaction, "tag": Tag(request_tag)}
 
 
-def requestData():
-    api_key = generate_api_key()
+def requestData(api_key=None):
+    if api_key is None:
+        api_key = generate_api_key()
     # type: () -> Optional[Text]
     request_id = TryteString.from_string(str(register_request()))[0:27]
     print(request_id)
@@ -151,7 +152,9 @@ def requestData():
         # Extract the tail transaction hash from the newly-created
         # bundle.
         bundle = st_response['bundle'] # type: Bundle
-        request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash, "Authentication" : transaction["tag"], "Content-Type" : "application/json"})
+        request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash,
+                                               "Authorization" : api_key,
+                                               "Content-Type" : "application/json"})
         print(request_dict['request'].json())
         return request_dict['request'].json()
 
@@ -159,6 +162,7 @@ def requestData():
 
 
 def main():
+    #if no api key is entered as arg then a new one will be generated
     requestData()
 
 
