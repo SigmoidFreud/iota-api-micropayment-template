@@ -143,7 +143,7 @@ def requestData(api_key=None):
     price = response_headers['price']
     accept_payment = input("The server asks for a payment of " + price + " IOTAs. procceed? Y/N")
     if accept_payment == 'Y':
-        transaction = create_transaction_dictionary(address=response_headers['tag'],
+        transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price = response_headers['price'],
                                                     request_tag=response_headers['tag'])
         api = create_iota_object(uri='http://85.93.93.110:14265/',auth_token=None)
