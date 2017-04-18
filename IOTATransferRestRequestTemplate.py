@@ -118,7 +118,7 @@ def create_iota_object(uri, auth_token, seed=None):
 def create_transaction_dictionary(address, price, depth=3, request_tag=None):
     # type: (int, Optional[binary_type]) -> dict
     print("address: "+address)
-    r_tag=Tag(request_tag)
+    r_tag=Tag(request_tag.encode('utf-8'))
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
         address=Address(str.encode(address)),
@@ -152,7 +152,7 @@ def requestData(api_key=None):
     if accept_payment == 'Y':
         transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price=response_headers['price'],
-                                                    request_tag=TryteString.from_string(response_headers['tag']))
+                                                    request_tag=response_headers['tag'])
         api = create_iota_object(uri='http://85.93.93.110:14265/', auth_token=None)
         st_response = api.send_transfer(
             depth=transaction['depth'],
