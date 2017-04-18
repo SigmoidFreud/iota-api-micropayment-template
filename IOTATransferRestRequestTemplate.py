@@ -120,7 +120,7 @@ def create_transaction_dictionary(address, price, depth=3, request_tag=None):
     print("address: "+address)
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
-        address=str(address),
+        address=Address(str.encode(address)),
         # Amount of IOTA to transfer.
         # This value may be zero.
         value=int(price),
@@ -136,18 +136,18 @@ def create_transaction_dictionary(address, price, depth=3, request_tag=None):
 
 def requestData(api_key=None):
     if api_key is None:
-        api_key = generate_api_key()
+        key = generate_api_key()
     # type: () -> Optional[Text]
     request_id = TryteString.from_string(str(register_request()))[0:27]
     print(request_id)
 
     # :todo: Populate these values and/or make API object globally-accessible.
-    print(api_key)
-    request_dict = create_request(headers={"Authorization": api_key})
+    print(key)
+    request_dict = create_request(headers={"Authorization": key})
     response_headers = request_dict['request'].headers
     print (response_headers)
     price = response_headers['price']
-    accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/N")
+    accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/N\n")
     if accept_payment == 'Y':
         transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price=response_headers['price'],
@@ -164,8 +164,10 @@ def requestData(api_key=None):
         # Extract the tail transaction hash from the newly-created
         # bundle.
         bundle = st_response['bundle']  # type: Bundle
-        request_dict = create_request(headers={'transaction': bundle.tail_transaction.hash,
-                                               "Authorization": api_key})
+
+        request_dict = create_request(headers={'transaction': str(bundle.tail_transaction.hash)[18:-2],
+                                               "Authorization": key})
+        print(request_dict['request'].content)
         return request_dict['request'].json()
     else:
         print("You have not agreed to pay for the request data, so a an empty object will be returned")
