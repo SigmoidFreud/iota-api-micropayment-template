@@ -118,6 +118,7 @@ def create_iota_object(uri, auth_token, seed=None):
 def create_transaction_dictionary(address, price, depth=3, request_tag=None):
     # type: (int, Optional[binary_type]) -> dict
     print("address: "+address)
+    r_tag=Tag(request_tag)
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
         address=Address(str.encode(address)),
@@ -126,12 +127,12 @@ def create_transaction_dictionary(address, price, depth=3, request_tag=None):
         value=int(price),
 
         # Optional tag to attach to the transfer.
-        tag=Tag(request_tag),
+        tag=r_tag,
 
         # Optional message to include with the transfer.
         message=TryteString.from_string('I am making an API Request!'),
     )
-    return {"depth": depth, "transaction-object": sample_transaction, "tag": Tag(request_tag)}
+    return {"depth": depth, "transaction-object": sample_transaction, "tag": r_tag}
 
 
 def requestData(api_key=None):
@@ -151,7 +152,7 @@ def requestData(api_key=None):
     if accept_payment == 'Y':
         transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price=response_headers['price'],
-                                                    request_tag=response_headers['tag'])
+                                                    request_tag=TryteString.from_string(response_headers['tag']))
         api = create_iota_object(uri='http://85.93.93.110:14265/', auth_token=None)
         st_response = api.send_transfer(
             depth=transaction['depth'],
@@ -164,7 +165,7 @@ def requestData(api_key=None):
         # Extract the tail transaction hash from the newly-created
         # bundle.
         bundle = st_response['bundle']  # type: Bundle
-
+        print("bundle hash: "+str(bundle.tail_transaction.hash)[18:-2])
         request_dict = create_request(headers={'transaction': str(bundle.tail_transaction.hash)[18:-2],
                                                "Authorization": key})
         print(request_dict['request'].content)
