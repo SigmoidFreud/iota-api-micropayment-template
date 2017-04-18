@@ -151,7 +151,7 @@ def requestData(api_key=None):
     if accept_payment == 'Y':
         transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price=response_headers['price'],
-                                                    request_tag=TryteString.from_string(response_headers['tag'])[0:27])
+                                                    request_tag=response_headers['tag'])
         api = create_iota_object(uri='http://85.93.93.110:14265/', auth_token=None)
         st_response = api.send_transfer(
             depth=transaction['depth'],
