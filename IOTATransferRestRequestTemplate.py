@@ -87,10 +87,9 @@ def output_seed(seed):
 
 # sample dummy api request, will return dictionary of request object and UUID of the requst
 
-def create_request(url="http://46.101.109.238/forecast/Thessaloniki", headers=None):
+def create_request(url="http://46.101.109.238/forecast/", city ='Chicago', headers=None):
     # type: (Text, Optional[dict]) -> dict
-    print(headers)
-    return {"request": requests.get(url, headers=headers), "request-id": register_request()}
+    return {"request": requests.get(url+city, headers=headers), "request-id": register_request()}
 
 
 # Create the API object.
@@ -113,11 +112,12 @@ def create_iota_object(uri, auth_token, seed=None):
     )
 
 
-# Example of sending a transfer using the sandbox.
 # For more information, see :py:meth:`Iota.send_transfer`.
 def create_transaction_dictionary(address, price, depth=3, request_tag=None):
     # type: (int, Optional[binary_type]) -> dict
-    print("address: "+address)
+
+    # encode the string so it doesnt cause conflict during encode/decode process
+
     r_tag=Tag(request_tag.encode('utf-8'))
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
@@ -140,16 +140,14 @@ def requestData(api_key=None):
         key = generate_api_key()
     # type: () -> Optional[Text]
     request_id = TryteString.from_string(str(register_request()))[0:27]
-    print(request_id)
 
     # :todo: Populate these values and/or make API object globally-accessible.
-    print(key)
     request_dict = create_request(headers={"Authorization": key})
     response_headers = request_dict['request'].headers
-    print (response_headers)
     price = response_headers['price']
     accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/N\n")
     if accept_payment == 'Y':
+        print("Thank you for your payment the data will now be served...")
         transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price=response_headers['price'],
                                                     request_tag=response_headers['tag'])
@@ -165,10 +163,8 @@ def requestData(api_key=None):
         # Extract the tail transaction hash from the newly-created
         # bundle.
         bundle = st_response['bundle']  # type: Bundle
-        print("bundle hash: "+str(bundle.tail_transaction.hash)[18:-2])
         request_dict = create_request(headers={'transaction': str(bundle.tail_transaction.hash)[18:-2],
                                                "Authorization": key})
-        print(request_dict['request'].content)
         return request_dict['request'].json()
     else:
         print("You have not agreed to pay for the request data, so a an empty object will be returned")
@@ -177,8 +173,10 @@ def requestData(api_key=None):
 
 
 def main():
-    # if no api key is entered as arg then a new one will be generated
-    requestData(None)
+    # if no api key is entered as arg then a new one will be generated, if you have an existing key, use it
+    req = requestData(None)
+    # the above request return JSON
+    print(req)
 
 
 if __name__ == "__main__": main()
