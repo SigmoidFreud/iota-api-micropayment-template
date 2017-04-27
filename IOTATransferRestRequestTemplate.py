@@ -38,7 +38,7 @@ def generate_addresses(index=0, uri='ip address', auth_token=None):
     # If we generated a random seed, then we need to display it to the
     # user, or else they won't be able to use their new addresses!
     if not seed:
-        print('A random seed has been generated. Press enter to generate it.')
+        print('A new random seed has been initiated. Press enter to generate it.')
         output_seed(api.seed)
 
     print('Generating addresses.  Please wait until the address is generated...')
