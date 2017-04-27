@@ -87,7 +87,7 @@ def output_seed(seed):
 
 # sample dummy api request, will return dictionary of request object and UUID of the requst
 
-def create_request(url="http://46.101.109.238/forecast/", city ='Chicago', headers=None):
+def create_request(url="http://46.101.109.238/forecast/", city='Chicago', headers=None):
     # type: (Text, Optional[dict]) -> dict
     return {"request": requests.get(url+city, headers=headers), "request-id": register_request()}
 
