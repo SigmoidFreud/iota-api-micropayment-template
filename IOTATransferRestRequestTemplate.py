@@ -89,7 +89,7 @@ def output_seed(seed):
 
 def create_request(url="http://46.101.109.238/forecast/", city='Chicago', headers=None):
     # type: (Text, Optional[dict]) -> dict
-    return {"request": requests.get(url+city, headers=headers), "request-id": register_request()}
+    return {"request": requests.get(url + city, headers=headers), "request-id": register_request()}
 
 
 # Create the API object.
@@ -118,7 +118,7 @@ def create_transaction_dictionary(address, price, depth=3, request_tag=None):
 
     # encode the string so it doesnt cause conflict during encode/decode process
 
-    r_tag=Tag(request_tag.encode('utf-8'))
+    r_tag = Tag(request_tag.encode('utf-8'))
     sample_transaction = ProposedTransaction(
         # on the fly API payment address.
         address=Address(str.encode(address)),
@@ -135,18 +135,27 @@ def create_transaction_dictionary(address, price, depth=3, request_tag=None):
     return {"depth": depth, "transaction-object": sample_transaction, "tag": r_tag}
 
 
-def requestData(api_key=None):
+def payment_boolean(price=0):
+    accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/(Any other key)\n")
+    if accept_payment == 'Y':
+        return True
+    else:
+        return False
+
+
+def requestData(api_key=None, headers={}):
     if api_key is None:
         key = generate_api_key()
     # type: () -> Optional[Text]
     request_id = TryteString.from_string(str(register_request()))[0:27]
 
     # :todo: Populate these values and/or make API object globally-accessible.
-    request_dict = create_request(headers={"Authorization": key})
+    headers['Authorization'] = key
+    request_dict = create_request(headers)
     response_headers = request_dict['request'].headers
     price = response_headers['price']
-    accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/N\n")
-    if accept_payment == 'Y':
+    paid = payment_boolean(price)
+    if paid:
         print("Thank you for your payment the data will now be served...")
         transaction = create_transaction_dictionary(address=response_headers['address'],
                                                     price=response_headers['price'],
@@ -163,8 +172,8 @@ def requestData(api_key=None):
         # Extract the tail transaction hash from the newly-created
         # bundle.
         bundle = st_response['bundle']  # type: Bundle
-        request_dict = create_request(headers={'transaction': str(bundle.tail_transaction.hash)[18:-2],
-                                               "Authorization": key})
+        headers['transaction'] = str(bundle.tail_transaction.hash)[18:-2]
+        request_dict = create_request(headers)
         return request_dict['request'].json()
     else:
         print("You have not agreed to pay for the request data, so a an empty object will be returned")
@@ -173,13 +182,14 @@ def requestData(api_key=None):
 
 
 class payPerApi:
-
     def __init__(self, IOTA, seed, apiKey):
         self.IOTA = IOTA
         self.seed = seed
         self.apiKey = apiKey
 
-    def requestData(self):
+    headers = {"Authorization": apiKey}
+
+    def requestData(self, method='get'):
         if self.apiKey is None:
             key = generate_api_key()
         else:
@@ -210,12 +220,11 @@ class payPerApi:
             bundle = st_response['bundle']  # type: Bundle
             request_dict = create_request(headers={'transaction': str(bundle.tail_transaction.hash)[18:-2],
                                                    "Authorization": key})
-            return request_dict['request'].json()
+            return request_dict['request']
         else:
             print("You have not agreed to pay for the request data, so a an empty object will be returned")
 
         return None
-
 
 
 def main():
