@@ -180,8 +180,10 @@ class payPerApi:
         self.apiKey = apiKey
 
     def requestData(self):
-        if payPerApi.apiKey is None:
+        if self.apiKey is None:
             key = generate_api_key()
+        else:
+            key = self.apiKey
         # type: () -> Optional[Text]
         request_id = TryteString.from_string(str(register_request()))[0:27]
 
@@ -195,7 +197,7 @@ class payPerApi:
             transaction = create_transaction_dictionary(address=response_headers['address'],
                                                         price=response_headers['price'],
                                                         request_tag=response_headers['tag'])
-            st_response = payPerApi.IOTA.send_transfer(
+            st_response = self.IOTA.send_transfer(
                 depth=transaction['depth'],
 
                 # One or more :py:class:`ProposedTransaction` objects to add to the
