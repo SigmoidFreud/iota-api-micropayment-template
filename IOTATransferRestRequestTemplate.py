@@ -172,9 +172,55 @@ def requestData(api_key=None):
     return None
 
 
+class payPerApi:
+
+    def __init__(self, IOTA, seed, apiKey):
+        self.IOTA = IOTA
+        self.seed = seed
+        self.apiKey = apiKey
+
+    def requestData(self):
+        if payPerApi.apiKey is None:
+            key = generate_api_key()
+        # type: () -> Optional[Text]
+        request_id = TryteString.from_string(str(register_request()))[0:27]
+
+        # :todo: Populate these values and/or make API object globally-accessible.
+        request_dict = create_request(headers={"Authorization": key})
+        response_headers = request_dict['request'].headers
+        price = response_headers['price']
+        accept_payment = input("The server asks for a payment of " + price + " IOTAs. proceed? Y/N\n")
+        if accept_payment == 'Y':
+            print("Thank you for your payment the data will now be served...")
+            transaction = create_transaction_dictionary(address=response_headers['address'],
+                                                        price=response_headers['price'],
+                                                        request_tag=response_headers['tag'])
+            st_response = payPerApi.IOTA.send_transfer(
+                depth=transaction['depth'],
+
+                # One or more :py:class:`ProposedTransaction` objects to add to the
+                # bundle.
+                transfers=[transaction['transaction-object']],
+            )
+
+            # Extract the tail transaction hash from the newly-created
+            # bundle.
+            bundle = st_response['bundle']  # type: Bundle
+            request_dict = create_request(headers={'transaction': str(bundle.tail_transaction.hash)[18:-2],
+                                                   "Authorization": key})
+            return request_dict['request'].json()
+        else:
+            print("You have not agreed to pay for the request data, so a an empty object will be returned")
+
+        return None
+
+
+
 def main():
     # if no api key is entered as arg then a new one will be generated, if you have an existing key, use it
-    req = requestData(None)
+    api = create_iota_object(uri='http://85.93.93.110:14265/', auth_token=None)
+    client = payPerApi(api, None, None)
+    req = client.requestData()
     # the above request return JSON
     print(req)
 

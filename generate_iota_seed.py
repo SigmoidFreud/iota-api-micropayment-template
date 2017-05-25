@@ -2,7 +2,7 @@ from IOTATransferRestRequestTemplate import generate_addresses
 
 def main():
     # wrapper to generate an address
-    address = generate_addresses(uri="YOUR SERVER ADDRESS GOES HERE")
+    address = generate_addresses(uri="http://85.93.93.110:14265/")
     print(address)
 
 
